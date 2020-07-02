@@ -1,6 +1,8 @@
 from rest_framework.serializers import ModelSerializer
 
 from router.models import Router
+from router.validators import validate_mac_address
+
 
 class RouterSerializer(ModelSerializer):
     class Meta:
@@ -19,3 +21,9 @@ class RouterSerializer(ModelSerializer):
         })
 
         return super(RouterSerializer, self).update(instance, validated_data)
+
+    def validate(self, attrs):
+        print(attrs)
+        if attrs["mac_address"]:
+            validate_mac_address(attrs["mac_address"])
+        return attrs

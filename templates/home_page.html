@@ -28,22 +28,32 @@
                             <option value="AG1">AG1</option>
                             <option value="CSS">CSS</option>
                         </select>
+                        <div class="invalid-feedback">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="sapid">Sapid</label>
                         <input type="text" class="form-control" id="sapid" name="sap_id">
+                        <div class="invalid-feedback">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="host_name">Host Name</label>
                         <input type="text" class="form-control" id="host_name" name="host_name">
+                        <div class="invalid-feedback">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="loopback">Loopback</label>
-                        <input type="number" class="form-control" id="loopback" name="loopback">
+                        <input type="text" class="form-control" id="loopback" name="loopback">
+                        <div class="invalid-feedback">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="mac_address">Mac Address</label>
                         <input type="text" class="form-control" id="mac_address" name="mac_address">
+                        <div class="invalid-feedback">
+                        </div>
                     </div>
 
                 </div>
@@ -155,7 +165,7 @@
             let targetRouter = $targetElement.getAttribute("data-value");
 
             $.ajax({
-                url: 'http://127.0.0.1:8000/router?id='+ targetRouter,
+                url: 'http://127.0.0.1:8000/router?id=' + targetRouter,
                 method: "DELETE",
                 headers: HEADER,
                 finally: window.location.reload()
@@ -179,11 +189,9 @@
             $.each(errors, (key, error) => {
                 $input = $("[name=" + key + "]");
                 $input.addClass("is-invalid");
-                $input.closest("div.form-group").append(`
-                <div class="invalid-feedback">
-                    ` + error[0] + `
-                </div>
-                `)
+                $error = $input.closest("div.form-group").children("div.invalid-feedback");
+                $error.empty();
+                $error.text(error[0]);
             });
 
         }
@@ -194,8 +202,8 @@
             var resultData = {};
 
             let id = $('input[type=hidden]').val();
-            if (id){
-                resultData["id"] = id ;
+            if (id) {
+                resultData["id"] = id;
             }
 
             $.each(formData, (index, value) => {
@@ -220,10 +228,10 @@
                     edit = null;
                 },
                 error: function (response) {
-                    console.log(errors);
                     let errors = response.responseJSON
+                    console.log(errors);
                     populateError(errors);
-                    edit = null;
+                    {#edit = null;#}
                 }
             })
         });

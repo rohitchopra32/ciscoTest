@@ -1,13 +1,16 @@
-import traceback
 import datetime
-from django.utils import timezone
+import traceback
+import ipaddress
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.renderers import TemplateHTMLRenderer
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_ipv4_address
+from django.utils import timezone
 from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope
 from oauth2_provider.models import Application, AccessToken
 from oauthlib.common import generate_token
+from rest_framework.renderers import TemplateHTMLRenderer
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from router.models import Router
 from router.serializer import RouterSerializer
@@ -28,12 +31,6 @@ class RouterView(APIView):
             router_type = request.GET.get("router_type")
             if router_type:
                 queryset = queryset.filter(router_type=router_type)
-
-            input1 = request.GET.get("input1")
-            input2 = request.GET.get("input2")
-
-            if input1 and input2:
-                queryset = queryset.filter(loopback__range=[input1, input2])
 
             response_data = self.serializer_class(queryset, many=True)
 
@@ -90,6 +87,40 @@ class RouterView(APIView):
             return Response({"success": False, "error": str(error)}, status=400)
 
 
+class SearchByIpRange(APIView):
+    permission_classes = [TokenHasReadWriteScope]
+
+    def get(self, request):
+        try:
+            input1 = request.GET.get("input1")
+            input2 = request.GET.get("input2")
+
+            validate_ipv4_address(input1)
+            validate_ipv4_address(input2)
+
+            first = ipaddress.IPv4Address(input1)
+            last = ipaddress.IPv4Address(input2)
+            queryset = Router.objects.filter(is_active=True)
+            summary = " ".join(map(str, ipaddress.summarize_address_range(first, last)))
+
+            final_data = []
+            for i in queryset:
+                if ipaddress.IPv4Network(i.loopback).__str__() in summary:
+                    final_data.append(i)
+
+            data = RouterSerializer(final_data, many=True)
+            return Response({"data": data.data, "success": True}, status=200)
+        except ValueError as error:
+            traceback.print_exc()
+            return Response({"error": error, "success": False}, status=400)
+        except ValidationError as error:
+            traceback.print_exc()
+            return Response({"error": error, "success": False}, status=400)
+        except Exception as error:
+            traceback.print_exc()
+            return Response({"error": str(error), "success": False}, status=400)
+
+
 class GetToken(APIView):
     def get(self, request):
         from django.contrib.auth.models import User
@@ -108,19 +139,19 @@ class GetToken(APIView):
 class RouterTemplate(APIView):
     renderer_classes = [TemplateHTMLRenderer]
 
-    def get(self,request):
+    def get(self, request):
         return Response(template_name='home_page.html')
 
 
 class SearchByIpAddrRange(APIView):
     renderer_classes = [TemplateHTMLRenderer]
 
-    def get(self,request):
+    def get(self, request):
         return Response(template_name='ip_addr_range.html')
 
 
 class SearchByRouterType(APIView):
     renderer_classes = [TemplateHTMLRenderer]
 
-    def get(self,request):
+    def get(self, request):
         return Response(template_name='router_type.html')

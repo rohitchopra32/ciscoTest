@@ -22,12 +22,13 @@
             </div>
             <form id="searchRouter">
                 <div class="modal-body">
+                    <h6 class="modal-title error" style="color: red"></h6>
 
                     <label class="" for="input1">IP 1</label>
-                    <input type="number" class="form-control mb-2 mr-sm-2" id="input1" name="input1">
+                    <input type="text" class="form-control mb-2 mr-sm-2" id="input1" name="input1">
 
                     <label class="" for="input2">IP 2</label>
-                    <input type="number" class="form-control mb-2 mr-sm-2" id="input2" name="input2">
+                    <input type="text" class="form-control mb-2 mr-sm-2" id="input2" name="input2">
 
                 </div>
                 <div class="modal-footer">
@@ -81,7 +82,6 @@
                             <li class="list-group-item" data-value="__loopback__" data-name="loopback">Loopback: __loopback__</li>
                             <li class="list-group-item" data-value="__mac_address__" data-name="mac_address">Mac Address: __mac_address__</li>
                         </ul>
-                        <button class="btn btn-primary router-edit" data-value="__id__" data-toggle="modal" data-target="#AddModal">Edit</button>
                         <button class="btn btn-danger delete" data-value="__id__">Delete</button>
                     </div>
                 </div>
@@ -93,6 +93,9 @@
         function populateRouterList(data) {
             var routerList = data.data;
             $container = $("#router-list");
+            let innerHtml = $container.html();
+            $container.empty();
+            $container.append(innerHtml);
             $.each(routerList, function (index, jsonObject) {
                 let temp_template = router_list_template;
                 $.each(jsonObject, function (key, val) {
@@ -146,15 +149,7 @@
         });
 
         function populateError(errors) {
-            $.each(errors, (key, error) => {
-                $input = $("[name=" + key + "]");
-                $input.addClass("is-invalid");
-                $input.closest("div.form-group").append(`
-                <div class="invalid-feedback">
-                    ` + error[0] + `
-                </div>
-                `)
-            });
+            $("h6.error").empty().text(errors[0]);
 
         }
 
@@ -167,7 +162,7 @@
 
 
             $.ajax({
-                url: 'http://127.0.0.1:8000/router?'+formData,
+                url: 'http://127.0.0.1:8000/search_by_ip_addr_range_api?'+formData,
                 headers: HEADER,
                 async: false,
                 success: function (response) {
@@ -176,8 +171,8 @@
                     edit = null;
                 },
                 error: function (response) {
-                    console.log(errors);
-                    let errors = response.responseJSON
+                    let errors = response.responseJSON["error"]
+                    console.log(response);
                     populateError(errors);
                     edit = null;
                 }
